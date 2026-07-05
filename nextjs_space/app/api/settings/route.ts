@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { getFileUrl } from '@/lib/s3'
+import { getStorageProvider } from '@/lib/storage'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,12 +18,17 @@ export async function GET() {
   const settings = await getOrCreateSettings()
   let logoUrl: string | null = null
   if (settings.logoPath) {
-    logoUrl = await getFileUrl(settings.logoPath, 'image/png', true).catch(() => null)
+    try {
+      const storage = await getStorageProvider()
+      logoUrl = await storage.getUrl(settings.logoPath, 'image/png')
+    } catch { /* ignora */ }
   }
   return NextResponse.json({
     officeName: settings.officeName,
     primaryColor: settings.primaryColor,
     logoUrl,
+    storageProvider: settings.storageProvider,
+    googleDriveFolderId: settings.googleDriveFolderId,
   })
 }
 
@@ -39,18 +44,27 @@ export async function PATCH(req: Request) {
     if (body?.officeName !== undefined) data.officeName = body.officeName.toString().trim() || 'Gestão Contábil'
     if (body?.primaryColor !== undefined) data.primaryColor = body.primaryColor.toString()
     if (body?.logoPath !== undefined) data.logoPath = body.logoPath?.toString() || null
+    if (body?.storageProvider !== undefined) data.storageProvider = body.storageProvider
+    if (body?.googleDriveFolderId !== undefined) data.googleDriveFolderId = body.googleDriveFolderId?.toString().trim() || null
+    if (body?.googleServiceAccountJson !== undefined) data.googleServiceAccountJson = body.googleServiceAccountJson?.toString().trim() || null
+
     const updated = await prisma.settings.update({
       where: { id: settings.id },
       data,
     })
     let logoUrl: string | null = null
     if (updated.logoPath) {
-      logoUrl = await getFileUrl(updated.logoPath, 'image/png', true).catch(() => null)
+      try {
+        const storage = await getStorageProvider()
+        logoUrl = await storage.getUrl(updated.logoPath, 'image/png')
+      } catch { /* ignora */ }
     }
     return NextResponse.json({
       officeName: updated.officeName,
       primaryColor: updated.primaryColor,
       logoUrl,
+      storageProvider: updated.storageProvider,
+      googleDriveFolderId: updated.googleDriveFolderId,
     })
   } catch (e) {
     return NextResponse.json({ error: 'Erro ao salvar configurações.' }, { status: 500 })

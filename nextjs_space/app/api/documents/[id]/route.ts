@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { deleteFile } from '@/lib/s3'
+import { getStorageProvider } from '@/lib/storage'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,12 +18,12 @@ export async function DELETE(
   if (!doc) {
     return NextResponse.json({ error: 'Documento não encontrado.' }, { status: 404 })
   }
-  // Contador pode remover qualquer; cliente só os próprios uploads
   if (session.user.role !== 'CONTADOR' && doc.uploadedById !== session.user.id) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 403 })
   }
   try {
-    await deleteFile(doc.cloudStoragePath).catch(() => {})
+    const storage = await getStorageProvider()
+    await storage.delete(doc.cloudStoragePath).catch(() => {})
     await prisma.document.delete({ where: { id: params.id } })
     return NextResponse.json({ success: true })
   } catch (e) {

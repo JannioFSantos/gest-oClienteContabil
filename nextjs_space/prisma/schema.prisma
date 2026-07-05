@@ -25,6 +25,12 @@ enum ClientStatus {
   ENCERRADO
 }
 
+enum StorageProvider {
+  LOCAL
+  S3
+  GOOGLE_DRIVE
+}
+
 enum DocumentCategory {
   BALANCETE
   FOLHA_PAGAMENTO
@@ -133,9 +139,12 @@ model NoticeRead {
 }
 
 model Settings {
-  id           String   @id @default(cuid())
-  officeName   String   @default("Gestão Contábil")
-  logoPath     String?
-  primaryColor String   @default("#2563EB")
-  updatedAt    DateTime @updatedAt
+  id                       String          @id @default(cuid())
+  officeName               String          @default("Gestão Contábil")
+  logoPath                 String?
+  primaryColor             String          @default("#2563EB")
+  storageProvider          StorageProvider @default(LOCAL)
+  googleServiceAccountJson String?
+  googleDriveFolderId      String?
+  updatedAt                DateTime        @updatedAt
 }

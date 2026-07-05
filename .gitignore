@@ -48,5 +48,8 @@ Thumbs.db
 # Prisma migrations (opcional — mantenha se quiser versionar)
 # prisma/migrations/
 
+# Arquivos acidentais
+nul
+
 # Cache
 .eslintcache

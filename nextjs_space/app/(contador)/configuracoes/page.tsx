@@ -18,6 +18,14 @@ import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -42,6 +50,12 @@ export default function ConfiguracoesPage() {
   const [secretWord, setSecretWord] = useState('')
   const [secretHint, setSecretHint] = useState('')
   const [savingSecret, setSavingSecret] = useState(false)
+
+  // --- Storage ---
+  const [storageProvider, setStorageProvider] = useState('LOCAL')
+  const [gDriveFolder, setGDriveFolder] = useState('')
+  const [gDriveJson, setGDriveJson] = useState('')
+  const [savingStorage, setSavingStorage] = useState(false)
 
   // --- Contadores auxiliares ---
   const [accountants, setAccountants] = useState<any[]>([])
@@ -186,6 +200,24 @@ export default function ConfiguracoesPage() {
       .catch(() => {})
   }
 
+  const saveStorage = async () => {
+    setSavingStorage(true)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storageProvider,
+          googleDriveFolderId: gDriveFolder || null,
+          googleServiceAccountJson: gDriveJson || null,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success('Configuração de armazenamento salva!')
+    } catch { toast.error('Erro ao salvar.') }
+    finally { setSavingStorage(false) }
+  }
+
   const deleteAccountant = async (id: string, name: string) => {
     if (!confirm(`Remover o contador "${name}"? Esta ação não pode ser desfeita.`)) return
     setDeleting(id)
@@ -286,6 +318,42 @@ export default function ConfiguracoesPage() {
           finally { setSavingSecret(false) }
         }} disabled={savingSecret}>
           {savingSecret ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Salvar palavra secreta
+        </Button>
+      </div>
+
+      {/* Storage */}
+      <div className="rounded-xl bg-card p-6 shadow-[var(--shadow-sm)] space-y-4">
+        <h2 className="font-display text-lg font-bold">Armazenamento de Documentos</h2>
+        <p className="text-sm text-muted-foreground">
+          Escolha onde os documentos enviados serão armazenados. A alteração só afeta novos uploads.
+        </p>
+        <div className="space-y-2">
+          <Label>Provedor</Label>
+          <Select value={storageProvider} onValueChange={(v) => { setStorageProvider(v); if (v === 'LOCAL') { setGDriveJson(''); setGDriveFolder('') } }}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="LOCAL">Servidor Local (padrão)</SelectItem>
+              <SelectItem value="S3">AWS S3</SelectItem>
+              <SelectItem value="GOOGLE_DRIVE">Google Drive</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {storageProvider === 'GOOGLE_DRIVE' && (
+          <>
+            <div className="space-y-2">
+              <Label>ID da pasta no Google Drive</Label>
+              <Input value={gDriveFolder} onChange={(e) => setGDriveFolder(e.target.value)} placeholder="Ex: 1abc2def3ghi4jkl..." />
+              <p className="text-xs text-muted-foreground">Encontre na URL do Drive: drive.google.com/drive/folders/{'<ID>'}</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Chave JSON da Service Account</Label>
+              <Textarea rows={6} value={gDriveJson} onChange={(e) => setGDriveJson(e.target.value)} placeholder='Cole o conteúdo completo do arquivo JSON da service account' className="font-mono text-xs" />
+              <p className="text-xs text-muted-foreground">Crie em: Google Cloud Console → APIs & Services → Credentials → Service Account</p>
+            </div>
+          </>
+        )}
+        <Button onClick={saveStorage} disabled={savingStorage}>
+          {savingStorage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Salvar armazenamento
         </Button>
       </div>
 

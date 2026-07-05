@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getStorageProvider } from '@/lib/storage'
 import { getFileUrl } from '@/lib/s3'
 
 export const dynamic = 'force-dynamic'
@@ -29,6 +30,7 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado.' }, { status: 403 })
     }
   }
-  const url = await getFileUrl(doc.cloudStoragePath, doc.contentType, doc.isPublic)
+  const storage = await getStorageProvider()
+  const url = await storage.getUrl(doc.cloudStoragePath, doc.contentType)
   return NextResponse.json({ url, fileName: doc.fileName })
 }
