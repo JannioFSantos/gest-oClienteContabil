@@ -129,6 +129,40 @@ nextjs_space/
 └── scripts/
 ```
 
+## Armazenamento de Documentos
+
+O sistema suporta três provedores de armazenamento, configuráveis pelo contador em Configurações:
+
+| Provedor | Descrição | Custo |
+|---|---|---|
+| **Servidor Local** | Arquivos salvos em `uploads/` no próprio servidor. Padrão. | Nenhum |
+| **AWS S3** | Bucket S3 da Amazon. Requer credenciais AWS no `.env`. | Pago por uso |
+| **Google Drive** | Pasta compartilhada no Google Drive. 15 GB gratuitos. | Gratuito |
+
+### Configurar Google Drive
+
+1. Acesse [Google Cloud Console](https://console.cloud.google.com), crie um projeto e habilite a **Google Drive API**
+2. Em APIs & Services → Credentials, crie uma **Service Account** e baixe o arquivo JSON
+3. No Google Drive, crie uma pasta e compartilhe com o e-mail da service account (leitura/gravação)
+4. No sistema, vá em **Configurações → Armazenamento de Documentos**
+5. Selecione **Google Drive**, cole o JSON da service account e o ID da pasta
+6. Salve
+
+O ID da pasta está na URL do Drive: `drive.google.com/drive/folders/<ID>`
+
+### Configurar AWS S3
+
+Defina as variáveis no `.env`:
+
+```
+AWS_PROFILE=seu-perfil
+AWS_REGION=us-west-2
+AWS_BUCKET_NAME=nome-do-bucket
+AWS_FOLDER_PREFIX=pasta/
+```
+
+Depois selecione **AWS S3** nas configurações. Credenciais AWS são lidas do ambiente (aws-cli configurado ou variáveis `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`).
+
 ## Stack
 
 | Tecnologia | Uso |
@@ -144,6 +178,6 @@ nextjs_space/
 ## Observações
 
 - Múltiplos contadores podem acessar o mesmo escritório (contadores auxiliares)
-- Armazenamento de arquivos via AWS S3 (configurar credenciais no `.env`)
+- Armazenamento de arquivos via servidor local, AWS S3 ou Google Drive (configurável pelo painel)
 - Chat utiliza polling (15s), não WebSockets
 - Para produção: alterar `NEXTAUTH_SECRET` e apontar para um banco PostgreSQL real
