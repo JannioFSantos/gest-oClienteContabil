@@ -1,0 +1,141 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CONTADOR
+  CLIENTE
+}
+
+enum RegimeTributario {
+  SIMPLES_NACIONAL
+  LUCRO_PRESUMIDO
+  LUCRO_REAL
+}
+
+enum ClientStatus {
+  ATIVO
+  SUSPENSO
+  ENCERRADO
+}
+
+enum DocumentCategory {
+  BALANCETE
+  FOLHA_PAGAMENTO
+  GUIAS
+  NOTAS_FISCAIS
+  EXTRATOS
+  BOLETOS
+  CONTRATOS
+  OUTROS
+}
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String
+  name       String
+  role       Role     @default(CLIENTE)
+  secretWord String?
+  secretHint String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  client            Client?    @relation("ClientUser")
+  sentMessages      Message[]  @relation("MessageSender")
+  uploadedDocuments Document[] @relation("DocumentUploader")
+
+  @@index([role])
+}
+
+model Client {
+  id               String           @id @default(cuid())
+  razaoSocial      String
+  nomeFantasia     String?
+  documento        String
+  regimeTributario RegimeTributario @default(SIMPLES_NACIONAL)
+  email            String
+  telefone         String?
+  status           ClientStatus     @default(ATIVO)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  userId String @unique
+  user   User   @relation("ClientUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  documents   Document[]
+  messages    Message[]
+  noticeReads NoticeRead[]
+
+  @@index([status])
+}
+
+model Document {
+  id               String           @id @default(cuid())
+  clientId         String
+  client           Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  year             Int
+  month            Int
+  category         DocumentCategory @default(OUTROS)
+  fileName         String
+  cloudStoragePath String
+  isPublic         Boolean          @default(false)
+  fileSize         Int              @default(0)
+  contentType      String           @default("application/octet-stream")
+  uploadedByRole   Role
+  uploadedById     String
+  uploadedBy       User             @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt        DateTime         @default(now())
+
+  @@index([clientId, year, month])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  senderRole Role
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([clientId, createdAt])
+}
+
+model Notice {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  createdAt   DateTime     @default(now())
+
+  reads NoticeRead[]
+
+  @@index([createdAt])
+}
+
+model NoticeRead {
+  id       String   @id @default(cuid())
+  noticeId String
+  notice   Notice   @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  clientId String
+  client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  readAt   DateTime @default(now())
+
+  @@unique([noticeId, clientId])
+}
+
+model Settings {
+  id           String   @id @default(cuid())
+  officeName   String   @default("Gestão Contábil")
+  logoPath     String?
+  primaryColor String   @default("#2563EB")
+  updatedAt    DateTime @updatedAt
+}
