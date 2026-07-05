@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Megaphone, Plus, Loader2, Users, CheckCircle2, XCircle, Eye } from 'lucide-react'
+import { Megaphone, Plus, Loader2, Users, CheckCircle2, XCircle, Eye, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,14 @@ export default function AvisosPage() {
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
   const [saving, setSaving] = useState(false)
+
+  // Edição
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editing, setEditing] = useState(false)
+
+  // Leituras
   const [readsOpen, setReadsOpen] = useState<string | null>(null)
   const [reads, setReads] = useState<any[]>([])
 
@@ -39,6 +47,37 @@ export default function AvisosPage() {
     } catch { toast.error('Erro ao publicar.') } finally { setSaving(false) }
   }
 
+  const openEdit = (n: any) => {
+    setEditId(n.id)
+    setEditTitle(n.title)
+    setEditDesc(n.description)
+  }
+
+  const saveEdit = async () => {
+    if (!editTitle.trim() || !editDesc.trim()) { toast.error('Preencha título e descrição.'); return }
+    setEditing(true)
+    try {
+      const res = await fetch(`/api/notices/${editId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: editTitle, description: editDesc }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success('Aviso atualizado!')
+      setEditId(null); load()
+    } catch { toast.error('Erro ao editar.') } finally { setEditing(false) }
+  }
+
+  const deleteNotice = async (id: string, title: string) => {
+    if (!confirm(`Excluir o aviso "${title}"? Esta ação não pode ser desfeita.`)) return
+    try {
+      const res = await fetch(`/api/notices/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      toast.success('Aviso excluído!')
+      load()
+    } catch { toast.error('Erro ao excluir.') }
+  }
+
   const openReads = (id: string) => {
     setReadsOpen(id); setReads([])
     fetch(`/api/notices/${id}/reads`).then((r) => r.json()).then((d) => setReads(d?.clients ?? [])).catch(() => {})
@@ -46,7 +85,7 @@ export default function AvisosPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] p-4 sm:p-6 lg:p-8">
-      <PageHeader title="Avisos Gerais" subtitle="Publique comunicados para todos os clientes e acompanhe as confirmações de leitura."
+      <PageHeader title="Avisos Gerais" subtitle="Publique comunicados para todos os clientes, edite ou remova avisos e acompanhe as confirmações de leitura."
         actions={<Button onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" /> Novo aviso</Button>} />
 
       {notices.length === 0 ? (
@@ -68,12 +107,17 @@ export default function AvisosPage() {
                   <Users className="h-4 w-4" /> {n.readCount}/{n.totalClients}
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="mt-3" onClick={() => openReads(n.id)}><Eye className="mr-2 h-4 w-4" /> Ver leituras</Button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => openReads(n.id)}><Eye className="mr-2 h-4 w-4" /> Ver leituras</Button>
+                <Button variant="outline" size="sm" onClick={() => openEdit(n)}><Pencil className="mr-2 h-4 w-4" /> Editar</Button>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => deleteNotice(n.id, n.title)}><Trash2 className="mr-2 h-4 w-4" /> Excluir</Button>
+              </div>
             </motion.div>
           ))}
         </div>
       )}
 
+      {/* Dialog: Novo aviso */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Publicar novo aviso</DialogTitle></DialogHeader>
@@ -88,6 +132,22 @@ export default function AvisosPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog: Editar aviso */}
+      <Dialog open={!!editId} onOpenChange={(v) => !v && setEditId(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar aviso</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2"><Label>Título</Label><Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Descrição</Label><Textarea rows={5} value={editDesc} onChange={(e) => setEditDesc(e.target.value)} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditId(null)} disabled={editing}>Cancelar</Button>
+            <Button onClick={saveEdit} disabled={editing}>{editing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Status de leitura */}
       <Dialog open={!!readsOpen} onOpenChange={(v) => !v && setReadsOpen(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Status de leitura</DialogTitle></DialogHeader>
