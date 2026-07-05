@@ -1,17 +1,16 @@
 # Gestão Contábil - Sistema de Gerenciamento para Escritórios Contábeis
 
-Plataforma completa para escritórios de contabilidade gerenciarem clientes, documentos, mensagens e avisos com segurança e organização.
+Plataforma para escritórios de contabilidade gerenciarem clientes, documentos, mensagens e avisos.
 
----
-
-## 🚀 Como iniciar o projeto
+## Como iniciar o projeto
 
 ### Pré-requisitos
-- **Node.js** 18+
-- **Docker** (para o banco de dados PostgreSQL local)
-- **npm**
 
-### Passo 1: Subir o banco de dados PostgreSQL
+- Node.js 18+
+- Docker (para PostgreSQL local)
+- npm
+
+### Passo 1: Banco de dados PostgreSQL
 
 ```bash
 docker run --name pg-contabil \
@@ -22,16 +21,16 @@ docker run --name pg-contabil \
   -d postgres:16
 ```
 
-### Passo 2: Configurar variáveis de ambiente
+### Passo 2: Variáveis de ambiente
 
-O arquivo `.env` já está configurado para desenvolvimento local. Verifique se contém:
+O arquivo `.env` já está configurado para desenvolvimento local:
 
 ```
 DATABASE_URL="postgresql://contabil:contabil123@localhost:5432/sistema_contabil?connect_timeout=15"
 NEXTAUTH_SECRET="QnaOlaZOtH64yN4mWwUvwYVo7P5kYTln"
 ```
 
-> ⚠️ **Importante**: O arquivo `.env` não é versionado no Git. Em produção, configure as variáveis de ambiente adequadamente.
+O `.env` não é versionado. Em produção, configure as variáveis no ambiente.
 
 ### Passo 3: Instalar dependências
 
@@ -40,40 +39,38 @@ cd nextjs_space
 npm install --legacy-peer-deps
 ```
 
-### Passo 4: Gerar o Prisma Client e rodar as migrations
+### Passo 4: Prisma Client e migrations
 
 ```bash
 npx prisma generate
 npx prisma db push
 ```
 
-### Passo 5: Popular o banco com dados de exemplo (seed)
+### Passo 5: Popular o banco (seed)
 
 ```bash
 npx tsx --require dotenv/config scripts/seed.ts
 ```
 
-### Passo 6: Iniciar o servidor de desenvolvimento
+### Passo 6: Iniciar o servidor
 
 ```bash
 npm run dev
 ```
 
-Acesse: **http://localhost:3000**
+Acessar em `http://localhost:3000`.
 
----
-
-## 🔐 Credenciais de Acesso
+## Credenciais de Acesso
 
 ### Conta de Administrador (Contador Principal)
 
 | Campo | Valor |
 |---|---|
-| **E-mail** | `john@doe.com` |
-| **Senha** | `johndoe123` |
-| **Palavra secreta** | `abacaxi` |
-| **Dica da palavra secreta** | `fruta amarela` |
-| **Função** | Contador (acesso total) |
+| E-mail | `john@doe.com` |
+| Senha | `johndoe123` |
+| Palavra secreta | `abacaxi` |
+| Dica da palavra secreta | `fruta amarela` |
+| Perfil | Contador (acesso total) |
 
 ### Contas de Clientes (dados de exemplo)
 
@@ -83,88 +80,70 @@ Acesse: **http://localhost:3000**
 | TechLog Soluções em TI | `financeiro@techlog.com.br` | `cliente123` | Ativo |
 | Constructa Engenharia | `admin@constructa.com.br` | `cliente123` | Suspenso |
 
----
+## Recuperação de Senha
 
-## 🔄 Recuperação de Senha
+**Contador**: na tela de login, clique em "Esqueceu a senha?". Informe e-mail e palavra secreta. Se corretos, uma nova senha é exibida. Se a palavra secreta estiver errada, a dica cadastrada aparece.
 
-### Para contadores (na tela de login):
-1. Clique em **"Esqueceu a senha? (somente contador)"**
-2. Informe seu **e-mail** e a **palavra secreta**
-3. Se a palavra secreta estiver correta, uma nova senha será exibida
-4. Se errar a palavra secreta, a **dica** será exibida
-5. Use a nova senha para fazer login
+**Cliente**: não possui recuperação automática. O contador deve acessar Clientes, selecionar o cliente e usar o botão "Resetar senha". Uma nova senha será gerada e exibida.
 
-### Para clientes:
-- Clientes **não conseguem** recuperar senha sozinhos
-- O contador deve acessar **Clientes → selecionar o cliente → Resetar senha**
-- Uma nova senha será gerada e exibida
-
----
-
-## 👥 Funções do Sistema
+## Perfis de Acesso
 
 ### Contador (Administrador)
-- Painel com visão geral (clientes ativos, documentos, mensagens)
-- Cadastrar, editar e gerenciar clientes
-- Resetar senha de clientes
-- Gerenciar documentos por cliente, ano e mês
-- Chat direto com cada cliente
-- Publicar avisos gerais e acompanhar leituras
-- Cadastrar outros contadores auxiliares
-- Configurar identidade do escritório (nome, logo)
-- Definir palavra secreta para recuperação de senha
+
+- Dashboard com total de clientes ativos, documentos e mensagens não lidas
+- CRUD completo de clientes com geração automática de credenciais
+- Reset de senha de clientes
+- Gestão de documentos por cliente, ano e mês (upload/download)
+- Chat com cada cliente
+- Publicação de avisos com controle de leitura
+- Cadastro de contadores auxiliares (compartilham acesso aos clientes)
+- Configuração do escritório (nome, logo)
+- Definição de palavra secreta para recuperação de senha
 
 ### Cliente
-- Visualizar seus documentos organizados por ano e mês
-- Chat direto com o contador
-- Visualizar avisos do escritório
-- Confirmar leitura de avisos
-- Acesso restrito apenas aos seus próprios dados
 
----
+- Acesso apenas aos seus documentos, mensagens e avisos
+- Upload de documentos para o contador
+- Chat com o contador
+- Confirmação de leitura de avisos
 
-## 🗂️ Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 nextjs_space/
-├── app/                    # Rotas e páginas (App Router)
-│   ├── (contador)/         # Rotas do contador
-│   │   ├── dashboard/      # Painel principal
-│   │   ├── clientes/       # Gestão de clientes
-│   │   ├── documentos/     # Central de documentos
-│   │   ├── mensagens/      # Chat com clientes
-│   │   ├── avisos/         # Publicação de avisos
-│   │   └── configuracoes/  # Configurações do sistema
-│   ├── (cliente)/portal/   # Portal do cliente
-│   ├── api/                # Rotas de API
-│   └── login/              # Página de login
-├── components/             # Componentes reutilizáveis
-│   └── ui/                 # Biblioteca de UI (Radix + Tailwind)
-├── lib/                    # Lógica de negócio e utilitários
-├── prisma/                 # Schema e migrations
-└── scripts/                # Scripts (seed, etc.)
+├── app/
+│   ├── (contador)/
+│   │   ├── dashboard/
+│   │   ├── clientes/
+│   │   ├── documentos/
+│   │   ├── mensagens/
+│   │   ├── avisos/
+│   │   └── configuracoes/
+│   ├── (cliente)/portal/
+│   ├── api/
+│   └── login/
+├── components/
+│   └── ui/
+├── lib/
+├── prisma/
+└── scripts/
 ```
 
----
-
-## 🛠️ Tecnologias
+## Stack
 
 | Tecnologia | Uso |
 |---|---|
-| Next.js 14 | Framework full-stack |
+| Next.js 14 | Framework |
 | TypeScript | Linguagem |
-| Prisma | ORM para PostgreSQL |
-| NextAuth.js | Autenticação (JWT + Credentials) |
+| Prisma | ORM / PostgreSQL |
+| NextAuth.js | Autenticação JWT |
 | Tailwind CSS | Estilização |
-| Radix UI | Componentes acessíveis |
+| Radix UI | Componentes |
 | Framer Motion | Animações |
-| Docker | Banco de dados local |
 
----
+## Observações
 
-## 📝 Notas
-
-- O sistema suporta **múltiplos contadores** no mesmo escritório (contadores auxiliares)
-- Documentos são armazenados em **AWS S3** (as credenciais AWS devem ser configuradas no `.env` para upload funcionar)
-- O chat utiliza **polling** a cada 10-15 segundos (não usa WebSockets)
-- Para produção, altere `NEXTAUTH_SECRET` e configure um banco PostgreSQL real
+- Múltiplos contadores podem acessar o mesmo escritório (contadores auxiliares)
+- Armazenamento de arquivos via AWS S3 (configurar credenciais no `.env`)
+- Chat utiliza polling (15s), não WebSockets
+- Para produção: alterar `NEXTAUTH_SECRET` e apontar para um banco PostgreSQL real
